@@ -1,6 +1,4 @@
 # Model checkpoints tracked via Git LFS
-# model_checkpoints/  <-- removed so LFS can manage these files
-
 # Python
 __pycache__/
 *.py[cod]
