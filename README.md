@@ -23,12 +23,12 @@ Multimodal-ters/
 ├── train_fusion_search.sh       # SLURM array job for fusion strategy search
 ├── requirements.txt
 ├── model_checkpoints/           # Pretrained model weights
-│   ├── ablation-none_fusion-none_freq-binning_seed-42/
-│   ├── ablation-early_fusion-early_freq-binning_seed-42/
-│   ├── ablation-late_fusion-late_freq-binning_seed-42/
-│   ├── ablation-attention_fusion-attention_freq-binning_seed-42/
-│   ├── ablation-film_fusion-film_freq-binning_seed-42/
-│   └── ablation-hybrid_fusion-hybrid_freq-binning_seed-42/
+│   ├── none_fusion
+│   ├── early_fusion
+│   ├── late_fusion
+│   ├── attention_fusion
+│   ├── film_fusion
+│   └── hybrid_fusion
 └── src/
     ├── configs/
     │   └── train_multimodal.yaml    # Training configuration
