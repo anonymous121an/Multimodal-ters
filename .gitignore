@@ -25,6 +25,11 @@ slurm_logs*/
 *.out
 *.err
 
+# Generated output images
+inference_*.png
+dice_summary_*.png
+fusion_comparison.png
+
 # Data
 *.h5
 *.hdf5

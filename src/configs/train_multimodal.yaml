@@ -1,0 +1,26 @@
+# Paths
+train_path: /scratch/phys/sin/sethih1/Multimodal_TERS/planar_hdf5_0.05/train.h5
+val_path: /scratch/phys/sin/sethih1/Multimodal_TERS/planar_hdf5_0.05/val.h5
+save_dir: /scratch/work/sethih1/checkpoints_multimodal_ters_freq-bin-100-b16
+
+# Model
+fusion_type: late
+num_channels: 100
+max_freqs: 100
+freq_encoding: binning
+
+# Training
+epochs: 100
+batch_size: 16
+lr: 0.0001
+loss_fn: dice_loss
+num_workers: 8
+seed: 42
+
+# Logging
+use_wandb: true
+wandb_project: multimodal-ters-freq-bin-100-b16
+wandb_run_name: fusion_{fusion_type}
+
+# Mode
+compare: false
