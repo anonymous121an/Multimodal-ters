@@ -1,0 +1,32 @@
+# Model checkpoints (too large for GitHub — store locally or use LFS)
+model_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Env
+.env
+*.env
+venv/
+.venv/
+
+# Logs & outputs
+*.log
+slurm_logs*/
+*.out
+*.err
+
+# Data
+*.h5
+*.hdf5
+*.npz
+*.npy
