@@ -1,5 +1,5 @@
-# Model checkpoints (too large for GitHub — store locally or use LFS)
-model_checkpoints/
+# Model checkpoints tracked via Git LFS
+# model_checkpoints/  <-- removed so LFS can manage these files
 
 # Python
 __pycache__/
