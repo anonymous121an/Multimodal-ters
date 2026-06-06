@@ -33,3 +33,7 @@ fusion_comparison.png
 *.hdf5
 *.npz
 *.npy
+
+wandb/
+
+checkpoints*/

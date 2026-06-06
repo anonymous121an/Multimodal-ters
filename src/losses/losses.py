@@ -56,23 +56,25 @@ def focal_loss(logits:torch.Tensor, labels:torch.Tensor, gamma:float=2.0, alpha:
 
 def dice_loss(pred, target, smooth=1e-6):
     """
-    pred: predicted probabilities after sigmoid with shape [N, C, H, W]
+    pred: raw logits with shape [N, C, H, W]
     target: ground truth binary masks with shape [N, C, H, W]
+    Computes Dice loss per class so every class (including rare ones like N)
+    contributes equally to the gradient.
     """
     # Apply sigmoid to obtain probabilities in the [0, 1] range
     pred = torch.sigmoid(pred)
-    
-    # Flatten the predictions and target masks per batch
-    pred_flat = pred.view(pred.size(0), -1)
-    target_flat = target.view(target.size(0), -1)
-    
-    # Calculate the intersection and union
-    intersection = (pred_flat * target_flat).sum(1)
-    union = pred_flat.sum(1) + target_flat.sum(1)
-    
-    # Compute the Dice coefficient and then the Dice loss
-    dice_score = (2.0 * intersection + smooth) / (union + smooth)
-    loss = 1 - dice_score.mean()
+
+    # Keep channel dim separate: (N, C, H*W)
+    pred_flat   = pred.view(pred.size(0), pred.size(1), -1)
+    target_flat = target.view(target.size(0), target.size(1), -1)
+
+    # Sum over pixels (dim=2) → (N, C)
+    intersection = (pred_flat * target_flat).sum(2)
+    union        = pred_flat.sum(2) + target_flat.sum(2)
+
+    # Dice per class, then average over batch and classes equally
+    dice_per_class = (2.0 * intersection + smooth) / (union + smooth)
+    loss = 1 - dice_per_class.mean()
     return loss
 
 '''def dice_loss(logits:torch.Tensor, labels:torch.Tensor, eps:float=1e-6):

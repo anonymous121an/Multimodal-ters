@@ -7,8 +7,8 @@
 # SBATCH --partition=gpu-a100-80g
 #SBATCH --partition=gpu-h200-141g-short
 #SBATCH --array=0-5
-#SBATCH -o /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal/fusion_%a_%A.out
-#SBATCH -e /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal/fusion_%a_%A.err
+#SBATCH -o /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal_film/fusion_%a_%A.out
+#SBATCH -e /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal_film/fusion_%a_%A.err
 #SBATCH --job-name=multimodal_fusion
 
 # =============================================================================
@@ -18,7 +18,9 @@
 # =============================================================================
 
 # Fusion types array (matches SLURM_ARRAY_TASK_ID 0-5)
-FUSION_TYPES=("none" "early" "late" "attention" "film" "hybrid") # "none"
+#FUSION_TYPES=("none" "early" "late" "attention" "film" "hybrid") # "none"
+
+FUSION_TYPES=("film" "hybrid") # "none"
 FUSION_TYPE=${FUSION_TYPES[$SLURM_ARRAY_TASK_ID]}
 
 echo "=============================================="
@@ -34,7 +36,8 @@ echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 nvidia-smi
 
 
-dir=/scratch/phys/sin/sethih1/Multimodal-ters/
+dir=/scratch/phys/sin/sethih1/Multimodal-ters/film
+script_dir=/scratch/phys/sin/sethih1/Multimodal-ters
 
 # Create log directories
 mkdir -p "$dir/slurm_logs_multimodal"
@@ -53,14 +56,14 @@ vmstat -n 30 > "$dir/slurm_logs_multimodal/resource_usage_${FUSION_TYPE}.log" &
 RESOURCE_MONITOR_PID=$!
 
 
-SUFFIX="freq-bin-100-b32"
+SUFFIX="film-dice-loss-freq-bin-100-b16"
 # Training configuration
 TRAIN_PATH="/scratch/phys/sin/sethih1/Multimodal_TERS/planar_hdf5_0.05/train.h5"
 VAL_PATH="/scratch/phys/sin/sethih1/Multimodal_TERS/planar_hdf5_0.05/val.h5"
 SAVE_DIR="$dir/checkpoints_multimodal_ters_${SUFFIX}"
 EPOCHS=100
-BATCH_SIZE=32
-LR=5e-5
+BATCH_SIZE=16
+LR=1e-4
 NUM_CHANNELS=100
 MAX_FREQS=${MAX_FREQS:-100}
 LOSS_FN="dice_loss"
@@ -69,7 +72,7 @@ FREQ_ENCODING="binning"
 #FREQ_ENCODING=${FREQ_ENCODING:-normalize}
 
 # WANDB config: set these as needed
-WANDB_PROJECT=${WANDB_PROJECT:-multimodal-ters-check-${SUFFIX}}
+WANDB_PROJECT=${WANDB_PROJECT:-multimodal-ters-${SUFFIX}}
 WANDB_RUN_NAME=${WANDB_RUN_NAME:-fusion_${FUSION_TYPE}} # _${SLURM_JOB_ID}}
 WANDB_API_KEY=8e4e0db2307a46c329b7d30d5f7ab11a176ba158
 # Run training
@@ -97,7 +100,7 @@ export PYTHONHASHSEED=$SEED
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
 
-python "$dir/train_multimodal.py" \
+python "$script_dir/train_multimodal.py" \
     --fusion_type $FUSION_TYPE \
     --train_path $TRAIN_PATH \
     --val_path $VAL_PATH \
