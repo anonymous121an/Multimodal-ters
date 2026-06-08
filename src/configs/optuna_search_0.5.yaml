@@ -1,0 +1,52 @@
+# =============================================================================
+# Optuna Hyperparameter Search Configuration — 0.5 Angstrom Dataset
+# Fusion types searched: none, early, late, attention (one per SLURM array task)
+# =============================================================================
+
+# --- Data Paths ---
+data_base: /scratch/phys/sin/sethih1/Multimodal_TERS/new/planar_hdf5_0.5
+# train_path and val_path are derived from data_base unless explicitly set:
+#   train_path: <data_base>/train.h5
+#   val_path:   <data_base>/val.h5
+
+# --- Fixed Model Params ---
+num_channels: 100
+max_freqs: 100
+freq_encoding: binning
+att_channels: 64          # Fixed — proven effective; not searched
+freq_embed_dim: 128
+freq_output_dim: 512
+
+# --- Fixed Training Params ---
+epochs: 30                # Reduced for 0.5A dataset
+batch_size: 16            # Fixed — not searched
+loss_fn: dice_loss
+num_workers: 8
+seed: 42                  # Base seed; each trial uses seed + trial.number
+
+# --- Checkpoint Storage ---
+save_dir: /scratch/phys/sin/sethih1/Multimodal-ters/model_checkpoints/optuna_0.5
+
+# --- WandB ---
+wandb_project: multimodal-ters-optuna-0.5
+# Groups: optuna_{fusion_type}  (set automatically per trial)
+# Tags:   [optuna, {fusion_type}, depth_{n_layers}, base_{filters[0]}, 0.5A]
+
+# --- Optuna Settings ---
+n_trials: 10
+study_storage_dir: /scratch/phys/sin/sethih1/Multimodal-ters/optuna_studies_0.5
+pruner_n_startup_trials: 3   # Don't prune the first N trials
+pruner_n_warmup_steps: 10    # Reduced warmup for 30 epoch runs
+
+# --- Search Space ---
+# filters_options: 4 configurations. kernel_size is auto-matched (all 3s).
+# With 10 trials, TPE will visit each architecture 2-3x with varying LRs.
+filters_options:
+  - [32, 64, 128, 256]        # 4-layer baseline
+  - [64, 128, 256]            # 3-layer large base (faster)
+  - [64, 128, 256, 512]       # 4-layer large base (proven best config)
+  - [32, 64, 128, 256, 512]   # 5-layer highest capacity
+
+# learning_rate: log-uniform [1e-5, 1e-3]  (set in code as suggest_float(..., log=True))
+lr_low: 1.0e-5
+lr_high: 1.0e-3

@@ -205,9 +205,9 @@ def train(args):
     model = MultimodalAttentionUNet(
         in_channels=args.num_channels,
         out_channels=4,
-        filters=[64, 128, 256, 512],
-        att_channels=64,
-        kernel_size=[3, 3, 3, 3],
+        filters=[16, 32, 64, 128], #[64, 128, 256, 512],
+        att_channels=16, #64,
+        kernel_size=[3, 3, 3, 3], #[3, 3, 3, 3],
         max_freqs=args.max_freqs,
         freq_embed_dim=128,
         freq_output_dim=512,

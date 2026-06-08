@@ -1,14 +1,15 @@
 #!/bin/bash
-#SBATCH --time=48:00:00
+#SBATCH --time=6:00:00
 #SBATCH --mem=200G
 #SBATCH --gpus=1
 #SBATCH -c 16
-# SBATCH --partition=gpu-h100-80g-short
-# SBATCH --partition=gpu-a100-80g
-#SBATCH --partition=gpu-h200-141g-short
-#SBATCH --array=0-5
-#SBATCH -o /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal_film/fusion_%a_%A.out
-#SBATCH -e /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal_film/fusion_%a_%A.err
+#SBATCH --partition=gpu-h100-80g-short
+#SBATCH --partition=gpu-a100-80g
+# SBATCH --partition=gpu-h200-141g-short
+# SBATCH --partition=gpu-grace-h200-141g#gpu-a100-80g #gpu-amd
+#SBATCH --array=0-3
+#SBATCH -o /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal_again_0.05/fusion_%a_%A.out
+#SBATCH -e /scratch/phys/sin/sethih1/Multimodal-ters/slurm_logs_multimodal_again_0.05/fusion_%a_%A.err
 #SBATCH --job-name=multimodal_fusion
 
 # =============================================================================
@@ -20,7 +21,7 @@
 # Fusion types array (matches SLURM_ARRAY_TASK_ID 0-5)
 #FUSION_TYPES=("none" "early" "late" "attention" "film" "hybrid") # "none"
 
-FUSION_TYPES=("film" "hybrid") # "none"
+FUSION_TYPES=("none" "early" "late" "attention") # "none"
 FUSION_TYPE=${FUSION_TYPES[$SLURM_ARRAY_TASK_ID]}
 
 echo "=============================================="
@@ -35,8 +36,12 @@ echo "=============================================="
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 nvidia-smi
 
+rmsd=0.05
+dir="/scratch/phys/sin/sethih1/Multimodal-ters/$rmsd-again"
+SUFFIX="again-$rmsd-dice-loss-freq-bin-100-b16"
+path_dir="/scratch/phys/sin/sethih1/Multimodal_TERS/new/planar_hdf5_$rmsd"
 
-dir=/scratch/phys/sin/sethih1/Multimodal-ters/film
+
 script_dir=/scratch/phys/sin/sethih1/Multimodal-ters
 
 # Create log directories
@@ -56,10 +61,10 @@ vmstat -n 30 > "$dir/slurm_logs_multimodal/resource_usage_${FUSION_TYPE}.log" &
 RESOURCE_MONITOR_PID=$!
 
 
-SUFFIX="film-dice-loss-freq-bin-100-b16"
+
 # Training configuration
-TRAIN_PATH="/scratch/phys/sin/sethih1/Multimodal_TERS/planar_hdf5_0.05/train.h5"
-VAL_PATH="/scratch/phys/sin/sethih1/Multimodal_TERS/planar_hdf5_0.05/val.h5"
+TRAIN_PATH="$path_dir/train.h5"
+VAL_PATH="$path_dir/val.h5"
 SAVE_DIR="$dir/checkpoints_multimodal_ters_${SUFFIX}"
 EPOCHS=100
 BATCH_SIZE=16

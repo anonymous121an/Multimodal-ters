@@ -37,3 +37,5 @@ fusion_comparison.png
 wandb/
 
 checkpoints*/
+
+optuna*/
