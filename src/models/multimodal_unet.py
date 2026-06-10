@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from src.models.layers import ResBlock, AttentionBlock2d
 from src.fusion_techniques import EarlyFusion, LateFusion, CrossModalAttention, FiLM
-from .frequency_encoder import FrequencyEncoder
+from .frequency_encoder import FrequencyEncoder, SpectralCNNEncoder
 
 class MultimodalAttentionUNet(nn.Module):
     """
@@ -18,17 +18,27 @@ class MultimodalAttentionUNet(nn.Module):
                  max_freqs=60,
                  freq_embed_dim=128,
                  freq_output_dim=512,
-                 fusion_type='late'):
+                 fusion_type='late',
+                 freq_encoder_type='transformer',
+                 num_bins=400,
+                 bottleneck_dropout_p=0.0):
         super().__init__()
         self.fusion_type = fusion_type
         self.filters = filters
         if fusion_type != 'none':
-            self.freq_encoder = FrequencyEncoder(
-                max_freqs=max_freqs,
-                embed_dim=freq_embed_dim,
-                hidden_dim=256,
-                output_dim=freq_output_dim
-            )
+            if freq_encoder_type == 'spectral_cnn':
+                self.freq_encoder = SpectralCNNEncoder(
+                    num_bins=num_bins,
+                    hidden_dim=256,
+                    output_dim=freq_output_dim,
+                )
+            else:  # 'transformer' (default)
+                self.freq_encoder = FrequencyEncoder(
+                    max_freqs=max_freqs,
+                    embed_dim=freq_embed_dim,
+                    hidden_dim=256,
+                    output_dim=freq_output_dim,
+                )
         if fusion_type == 'early':
             self.early_fusion = EarlyFusion(freq_output_dim, spatial_size=256, out_channels=64)
             in_channels = in_channels + 64
@@ -42,6 +52,7 @@ class MultimodalAttentionUNet(nn.Module):
         if fusion_type == 'late':
             self.late_fusion = LateFusion(filters[-1], freq_output_dim, filters[-1])
         self.bottom = ResBlock(filters[-1], filters[-1], kernel_size[-1])
+        self.bottleneck_dropout = nn.Dropout2d(p=bottleneck_dropout_p)
         if fusion_type in ['attention', 'hybrid']:
             self.cross_attentions = nn.ModuleList()
             for f in filters[::-1]:
@@ -79,12 +90,23 @@ class MultimodalAttentionUNet(nn.Module):
             skips.append(x)
             x = self.pool(x)
         x = self.bottom(x)
+        x = self.bottleneck_dropout(x)
         if self.fusion_type == 'late':
             x = self.late_fusion(x, freq_features)
         for i, (resblock, attn_block) in enumerate(zip(self.decoder, self.attentions)):
             skip = skips.pop()
             if self.fusion_type in ['attention', 'hybrid']:
-                skip, _ = self.cross_attentions[i](skip, freq_seq, freq_mask)
+                # freq_mask may have a different length than freq_seq's token dim
+                # (e.g. SpectralCNNEncoder pools 100 bins → 25 tokens). In that
+                # case freq_mask cannot be used as key_padding_mask; pass None
+                # instead (all tokens are real — no padding in binned encoding).
+                cross_mask = (
+                    freq_mask
+                    if (freq_mask is None or freq_seq is None
+                        or freq_mask.shape[-1] == freq_seq.shape[-1])
+                    else None
+                )
+                skip, _ = self.cross_attentions[i](skip, freq_seq, cross_mask)
             attn_skip, _ = attn_block(x, skip)
             if self.fusion_type in ['film', 'hybrid']:
                 attn_skip = self.film_layers[i](attn_skip, freq_features)

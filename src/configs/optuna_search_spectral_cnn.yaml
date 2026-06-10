@@ -1,0 +1,55 @@
+# =============================================================================
+# Optuna Hyperparameter Search — SpectralCNNEncoder
+#
+# Same search space as optuna_search.yaml but uses the 1D CNN frequency
+# encoder (SpectralCNNEncoder) with 100-bin Raman spectra instead of the
+# transformer-style encoder.
+#
+# Reference: Acquarelli et al. (Analytica Chimica Acta, 2017),
+#            Zhang et al. (Analytica Chimica Acta, 2018)
+# =============================================================================
+
+# --- Data Paths ---
+data_base: /scratch/phys/sin/sethih1/Multimodal_TERS/new/planar_hdf5_0.05
+# train_path and val_path are derived from data_base unless explicitly set:
+#   train_path: <data_base>/train.h5
+#   val_path:   <data_base>/val.h5
+
+# --- Fixed Model Params ---
+num_channels: 100
+max_freqs: 100
+freq_encoding: binning
+freq_encoder_type: spectral_cnn
+num_bins: 100
+att_channels: 64
+freq_embed_dim: 128       # unused by SpectralCNNEncoder, kept for API compat
+freq_output_dim: 512
+
+# --- Fixed Training Params ---
+epochs: 50
+batch_size: 16
+loss_fn: dice_loss
+num_workers: 8
+seed: 42
+
+# --- Checkpoint Storage ---
+save_dir: /scratch/phys/sin/sethih1/Multimodal-ters/model_checkpoints/optuna_spectral_cnn
+
+# --- WandB ---
+wandb_project: multimodal-ters-optuna-spectral-cnn
+
+# --- Optuna Settings ---
+n_trials: 10
+study_storage_dir: /scratch/phys/sin/sethih1/Multimodal-ters/optuna_studies_spectral_cnn
+pruner_n_startup_trials: 3
+pruner_n_warmup_steps: 15
+
+# --- Search Space ---
+filters_options:
+  - [32, 64, 128, 256]
+  - [64, 128, 256]
+  - [64, 128, 256, 512]
+  - [32, 64, 128, 256, 512]
+
+lr_low: 1.0e-5
+lr_high: 1.0e-3

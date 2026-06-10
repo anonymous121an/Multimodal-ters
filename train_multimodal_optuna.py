@@ -174,6 +174,8 @@ def objective(trial, fusion_type, config, device):
             "epochs": config['epochs'],
             "loss_fn": config['loss_fn'],
             "freq_encoding": config['freq_encoding'],
+            "freq_encoder_type": config.get('freq_encoder_type', 'transformer'),
+            "num_bins": config.get('num_bins', 400),
             "max_freqs": config['max_freqs'],
             "num_channels": config['num_channels'],
             "trial_number": trial.number,
@@ -196,6 +198,7 @@ def objective(trial, fusion_type, config, device):
         t_image=transform,
         train_aug=True,
         freq_encoding=config['freq_encoding'],
+        num_bins=config.get('num_bins', 400),
     )
     val_dataset = MultimodalTERSDataset(
         hdf5_path=config['val_path'],
@@ -204,6 +207,7 @@ def objective(trial, fusion_type, config, device):
         t_image=transform,
         train_aug=False,
         freq_encoding=config['freq_encoding'],
+        num_bins=config.get('num_bins', 400),
     )
 
     train_generator = torch.Generator()
@@ -239,6 +243,9 @@ def objective(trial, fusion_type, config, device):
         freq_embed_dim=config['freq_embed_dim'],
         freq_output_dim=config['freq_output_dim'],
         fusion_type=fusion_type,
+        freq_encoder_type=config.get('freq_encoder_type', 'transformer'),
+        num_bins=config.get('num_bins', 400),
+        bottleneck_dropout_p=trial.suggest_float('bottleneck_dropout_p', 0.0, 0.5) if trial is not None else 0.0,
     ).to(device)
 
     total_params = sum(p.numel() for p in model.parameters())

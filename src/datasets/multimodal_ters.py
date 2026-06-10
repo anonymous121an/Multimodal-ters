@@ -11,13 +11,17 @@ class MultimodalTERSDataset(Dataset):
     - freq_mask: mask indicating valid frequencies (max_freqs,)
     - target: segmentation target (4, H, W)
     """
-    def __init__(self, hdf5_path, num_channels=400, max_freqs=60, t_image=None, train_aug=False, freq_encoding='binning'):
+    def __init__(self, hdf5_path, num_channels=400, max_freqs=60, t_image=None, train_aug=False, freq_encoding='binning', num_bins=400):
         super().__init__()
         self.hdf5_path = hdf5_path
         self.num_channels = num_channels
         self.max_freqs = max_freqs
         self.t_image = t_image
         self.train_aug = train_aug
+        if self.train_aug:
+            from src.transforms import AugmentTransform
+            self.aug_image = AugmentTransform(gauss_std_range=(0.01, 0.1))
+        self.num_bins = num_bins
         self.hf = h5py.File(hdf5_path, 'r')
         channels_key = f'channels_{num_channels}'
         self.channels = self.hf[channels_key]
@@ -52,8 +56,8 @@ class MultimodalTERSDataset(Dataset):
             freq_mask = torch.from_numpy(freq_mask)
             freq_feat = freq_padded
         else:
-            # Default: single 400-dim multi-hot binning
-            num_bins = 400
+            # Default: multi-hot binning vector
+            num_bins = self.num_bins
             bin_width = 4000.0 / num_bins
             freq_binned = np.zeros(num_bins, dtype=np.float32)
             for freq in frequencies:
@@ -67,6 +71,10 @@ class MultimodalTERSDataset(Dataset):
         
         if self.t_image is not None:
             image = self.t_image(image)
+        
+        if self.train_aug:
+            image, target = self.aug_image(img=image, mask=target)
+
         out = {
             'image': image,
             'frequencies': freq_feat,

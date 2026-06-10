@@ -172,7 +172,7 @@ def train(args):
         num_channels=args.num_channels,
         max_freqs=args.max_freqs,
         t_image=transform,
-        train_aug=False,
+        train_aug=args.train_aug,
         freq_encoding=args.freq_encoding
     )
     
@@ -211,7 +211,8 @@ def train(args):
         max_freqs=args.max_freqs,
         freq_embed_dim=128,
         freq_output_dim=512,
-        fusion_type=args.fusion_type
+        fusion_type=args.fusion_type,
+        bottleneck_dropout_p=getattr(args, 'bottleneck_dropout_p', 0.0)
     ).to(device)
     
     total_params = sum(p.numel() for p in model.parameters())
@@ -317,8 +318,12 @@ def main():
                         choices=['none', 'early', 'late', 'attention', 'film', 'hybrid'])
     parser.add_argument('--num_channels', type=int, default=100)
     parser.add_argument('--max_freqs', type=int, default=60)
+    parser.add_argument('--bottleneck_dropout_p', type=float, default=0.0,
+                        help='Dropout probability at the UNet bottleneck')
     
     # Training config
+    parser.add_argument('--train_aug', action='store_true',
+                        help='Enable spatial augmentation and noise during training')
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--lr', type=float, default=1e-4)
